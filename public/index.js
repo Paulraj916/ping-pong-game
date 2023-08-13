@@ -21,7 +21,7 @@ const nameSubmitBtn = document.querySelector("#nameSubmitBtn");
 const gameContainer = document.querySelector("#gameContainer");
 
 // Initialize the Realtime Database
-const database = firebase.database();
+//const database = database();
 
 let roomName = '';  // Store the room name
 let playerType = ''; // Store the player type ('player1' or 'player2')
@@ -56,18 +56,54 @@ joinRoomBtn.addEventListener('click', () => {
     showNameInput('join');
 });
 
+// createRoomBtn.addEventListener('click', () => {
+//     const playerName = nameInput.value.trim();
+//     if (playerName !== '') {
+//         roomName = playerName;
+//         playerType = 'player1';
+//         createRoom(roomName, playerName);
+//         navigateToGameRoom(roomName); // Navigate to game room after creating
+//     }
+// });
+
+// joinRoomBtn.addEventListener('click', () => {
+//     const playerName = nameInput.value.trim();
+//     if (playerName !== '') {
+//         roomName = playerName;
+//         playerType = 'player2';
+//         joinRoom(roomName, playerName);
+//         navigateToGameRoom(roomName); // Navigate to game room after joining
+//     }
+// });
+
+nameSubmitBtn.addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    if (name !== '') {
+        if (nameSubmitBtn.dataset.action === 'create') {
+            roomName = name;
+            playerType = 'player1';
+            createRoom(roomName, name);
+            navigateToGameRoom(roomName);
+        } else if (nameSubmitBtn.dataset.action === 'join') {
+            roomName = name;
+            playerType = 'player2';
+            joinRoom(roomName, name);
+            navigateToGameRoom(roomName);
+        }
+    }
+});
+
 function createRoom(roomName, playerName) {
     const roomRef = database.ref('rooms').child(roomName);
     roomRef.once('value', snapshot => {
         if (!snapshot.exists()) {
-            roomRef.set({
-                players: {
-                    [playerType]: playerName  // Set player name based on type
-                }
-            });
+            const players = {
+                [playerType]: playerName  // Set player name based on type
+            };
+            roomRef.set({ players });
             hideNameInput();
             showGameContainer();
-            // Start the game
+            // Start the game or navigate to the game room
         } else {
             alert('Room already exists.');
         }
@@ -79,12 +115,12 @@ function joinRoom(roomName, playerName) {
     roomRef.once('value', snapshot => {
         if (snapshot.exists()) {
             const players = snapshot.val().players;
-            if (Object.keys(players).length < 2) {
-                players[playerType] = playerName; // Set player name based on type
+            if (!players['player2']) {
+                players['player2'] = playerName; // Set player name based on type
                 roomRef.update({ players });
                 hideNameInput();
                 showGameContainer();
-                // Start the game
+                // Start the game or navigate to the game room
             } else {
                 alert('Room is full.');
             }
@@ -94,20 +130,12 @@ function joinRoom(roomName, playerName) {
     });
 }
 
-nameSubmitBtn.addEventListener('click', () => {
-    const name = nameInput.value.trim();
-    if (name !== '') {
-        if (nameSubmitBtn.dataset.action === 'create') {
-            roomName = name;
-            playerType = 'player1';
-            createRoom(roomName, name);
-        } else if (nameSubmitBtn.dataset.action === 'join') {
-            roomName = name;
-            playerType = 'player2';
-            joinRoom(roomName, name);
-        }
-    }
-});
+function navigateToGameRoom(roomName) {
+    //window.location.href = `game-room.html?room=${roomName}`;
+    // Navigate to the game room page with the room name as a query parameter
+    const gameRoomURL = `game-room.html?room=${encodeURIComponent(roomName)}`;
+    window.location.href = gameRoomURL;
+}
 
 function showNameInput(action) {
     introContainer.style.display = 'none';
@@ -123,9 +151,12 @@ function hideNameInput() {
 }
 
 function showGameContainer() {
-    gameContainer.style.display = "block";
+    introContainer.style.display = 'none';
+    nameInputContainer.style.display = 'none';
+    gameContainer.style.display = 'block';
     gameStart();
 }
+
 
 function storeName(name) {
     const action = nameSubmitBtn.dataset.action;

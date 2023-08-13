@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paddle Game - Game Room</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+        import { getDatabase } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBNM-SkZP7wBEko7mlO4S4r6sD82s8l_pw",
+            authDomain: "pingponggame916.firebaseapp.com",
+            databaseURL: "https://pingponggame916-default-rtdb.firebaseio.com",
+            projectId: "pingponggame916",
+            storageBucket: "pingponggame916.appspot.com",
+            messagingSenderId: "480625146347",
+            appId: "1:480625146347:web:14f780877b20d635a241ae"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function joinRoomWithQueryParameter(roomName, playerName) {
+            const roomRef = database.ref('rooms').child(roomName);
+            roomRef.once('value', snapshot => {
+                if (snapshot.exists()) {
+                    const players = snapshot.val().players;
+                    if (!players['player2']) {
+                        players['player2'] = playerName;
+                        roomRef.update({ players });
+                        hideNameInput();
+                        showGameContainer();
+                    } else {
+                        alert('Room is full.');
+                    }
+                } else {
+                    alert('Room does not exist.');
+                }
+            });
+        }
+
+        if (roomName) {
+            const playerName = localStorage.getItem("player2Name");
+            if (playerName) {
+                joinRoomWithQueryParameter(roomName, playerName);
+            } else {
+                alert('Please enter your name first.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="gameWrapper">
+            <canvas id="gameBoard"></canvas>
+        </div>
+        <div id="scoreText">0 : 0</div>
+        <button id="resetBtn">Reset</button>
+    </div>
+    <script type="module" src="game.js"></script>
+</body>
+</html>
