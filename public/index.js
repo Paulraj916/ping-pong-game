@@ -19,10 +19,12 @@ const nameInputContainer = document.querySelector("#nameInputContainer");
 const nameInput = document.querySelector("#nameInput");
 const nameSubmitBtn = document.querySelector("#nameSubmitBtn");
 const gameContainer = document.querySelector("#gameContainer");
-import { getDatabase } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
 
 // Initialize the Realtime Database
-const database = getDatabase();
+const database = firebase.database();
+
+let roomName = '';  // Store the room name
+let playerType = ''; // Store the player type ('player1' or 'player2')
 
 
 let intervalID;
@@ -47,19 +49,11 @@ let paddle2 = {
 };
 
 createRoomBtn.addEventListener('click', () => {
-    const playerName = nameInput.value.trim();
-    if (playerName !== '') {
-        const roomName = playerName; // Use player's name as the room name
-        createRoom(roomName, playerName);
-    }
+    showNameInput('create');
 });
 
 joinRoomBtn.addEventListener('click', () => {
-    const playerName = nameInput.value.trim();
-    if (playerName !== '') {
-        const roomName = playerName; // Use player's name as the room name
-        joinRoom(roomName, playerName);
-    }
+    showNameInput('join');
 });
 
 function createRoom(roomName, playerName) {
@@ -67,7 +61,9 @@ function createRoom(roomName, playerName) {
     roomRef.once('value', snapshot => {
         if (!snapshot.exists()) {
             roomRef.set({
-                players: [playerName]
+                players: {
+                    [playerType]: playerName  // Set player name based on type
+                }
             });
             hideNameInput();
             showGameContainer();
@@ -83,8 +79,8 @@ function joinRoom(roomName, playerName) {
     roomRef.once('value', snapshot => {
         if (snapshot.exists()) {
             const players = snapshot.val().players;
-            if (players.length < 2) {
-                players.push(playerName);
+            if (Object.keys(players).length < 2) {
+                players[playerType] = playerName; // Set player name based on type
                 roomRef.update({ players });
                 hideNameInput();
                 showGameContainer();
@@ -98,24 +94,32 @@ function joinRoom(roomName, playerName) {
     });
 }
 
-nameSubmitBtn.addEventListener("click", () => {
-    const name = nameInput.value;
-    if (name.trim() !== "") {
-        storeName(name);
-        hideNameInput();
-        showGameContainer();
+nameSubmitBtn.addEventListener('click', () => {
+    const name = nameInput.value.trim();
+    if (name !== '') {
+        if (nameSubmitBtn.dataset.action === 'create') {
+            roomName = name;
+            playerType = 'player1';
+            createRoom(roomName, name);
+        } else if (nameSubmitBtn.dataset.action === 'join') {
+            roomName = name;
+            playerType = 'player2';
+            joinRoom(roomName, name);
+        }
     }
 });
 
 function showNameInput(action) {
-    introContainer.style.display = "none";
-    gameContainer.style.display = "none";
-    nameInputContainer.style.display = "block";
+    introContainer.style.display = 'none';
+    gameContainer.style.display = 'none';
+    nameInputContainer.style.display = 'block';
     nameSubmitBtn.dataset.action = action;
+    nameInput.focus(); // Set focus to the input field
 }
 
 function hideNameInput() {
-    nameInputContainer.style.display = "none";
+    nameInputContainer.style.display = 'none';
+    nameInput.value = ''; // Clear the input value
 }
 
 function showGameContainer() {
@@ -166,20 +170,24 @@ function gameStart() {
 }
 
 function movePaddles() {
-    // Move Paddle 1
-    if (keys[87] && paddle1.y > 0) {
-        paddle1.y -= paddleSpeed;
-    }
-    if (keys[83] && paddle1.y < gameHeight - paddle1.height) {
-        paddle1.y += paddleSpeed;
+    // Move Paddle 1 (user 1)
+    if (playerType === 'player1') {
+        if (keys[87] && paddle1.y > 0) {
+            paddle1.y -= paddleSpeed;
+        }
+        if (keys[83] && paddle1.y < gameHeight - paddle1.height) {
+            paddle1.y += paddleSpeed;
+        }
     }
 
-    // Move Paddle 2
-    if (keys2[38] && paddle2.y > 0) {
-        paddle2.y -= paddleSpeed;
-    }
-    if (keys2[40] && paddle2.y < gameHeight - paddle2.height) {
-        paddle2.y += paddleSpeed;
+    // Move Paddle 2 (user 2)
+    if (playerType === 'player2') {
+        if (keys[38] && paddle2.y > 0) {
+            paddle2.y -= paddleSpeed;
+        }
+        if (keys[40] && paddle2.y < gameHeight - paddle2.height) {
+            paddle2.y += paddleSpeed;
+        }
     }
 }
 
