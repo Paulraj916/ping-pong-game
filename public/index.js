@@ -19,10 +19,10 @@ const nameInputContainer = document.querySelector("#nameInputContainer");
 const nameInput = document.querySelector("#nameInput");
 const nameSubmitBtn = document.querySelector("#nameSubmitBtn");
 const gameContainer = document.querySelector("#gameContainer");
-import { getDatabase } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-database.js";
 
 // Initialize the Realtime Database
-const database = getDatabase();
+const database = firebase.database();
+
 
 
 let intervalID;
